@@ -28,6 +28,14 @@ class PlaywrightTool(Tool):
         if isinstance(result, str):
             yield self.create_text_message(result)
         elif isinstance(result, bytes):
-            yield self.create_blob_message(blob=result, meta={"mime_type": "image/png"})
+            if result.startswith(b'\x89PNG\r\n\x1a\n'):
+                mime_type = "image/png"
+            elif result.startswith(b'%PDF-'):
+                mime_type = "application/pdf"
+            elif result.startswith(b'PK\x03\x04'):
+                mime_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            else:
+                mime_type = "application/octet-stream"
+            yield self.create_blob_message(blob=result, meta={"mime_type": mime_type})
         else:
             yield self.create_text_message("Nothing output")
