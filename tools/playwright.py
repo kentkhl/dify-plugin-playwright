@@ -6,7 +6,7 @@ from dify_plugin.entities.tool import ToolInvokeMessage
 from playwright.async_api import async_playwright
 
 
-def run_playwright(uri: str, commands: str, uri_type: Literal["ws", "cdp"]) -> str | bytes:
+async def run_playwright(uri: str, commands: str, uri_type: Literal["ws", "cdp"]) -> str | bytes:
     async with async_playwright() as p:
         if uri_type == "ws":
             browser = await p.chromium.connect(ws_endpoint=uri, timeout=3000)
@@ -15,14 +15,14 @@ def run_playwright(uri: str, commands: str, uri_type: Literal["ws", "cdp"]) -> s
         local_vars = {"browser": browser}
         exec(commands, {}, local_vars)
         result = local_vars.get("result")
-
+        await browser.close()
     return result
 
 
 class PlaywrightTool(Tool):
-    def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage]:
+    async def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage]:
         commands = tool_parameters.get("script")
-        result = run_playwright(
+        result = await run_playwright(
             self.runtime.credentials.get("playwright_uri"), commands, self.runtime.credentials.get("uri_type")
         )
         if isinstance(result, str):
