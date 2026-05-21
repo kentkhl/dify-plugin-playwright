@@ -3,15 +3,15 @@ from typing import Any, Literal
 
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 
 
 def run_playwright(uri: str, commands: str, uri_type: Literal["ws", "cdp"]) -> str | bytes:
-    with sync_playwright() as p:
+    async with async_playwright() as p:
         if uri_type == "ws":
-            browser = p.chromium.connect(ws_endpoint=uri, timeout=3000)
+            browser = await p.chromium.connect(ws_endpoint=uri, timeout=3000)
         else:
-            browser = p.chromium.connect_over_cdp(endpoint_url=uri, timeout=3000)
+            browser = await p.chromium.connect_over_cdp(endpoint_url=uri, timeout=3000)
         local_vars = {"browser": browser}
         exec(commands, {}, local_vars)
         result = local_vars.get("result")
